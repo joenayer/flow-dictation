@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible problem with Flow.
+body:
+  - type: markdown
+    attributes:
+      value: Bug reports are welcome; outside code contributions and patches are not accepted. Use invented sample text. Do not attach credentials, private dictation, personal dictionaries, or a full Wispr database. Follow SECURITY.md for sensitive issues.
+  - type: input
+    id: environment
+    attributes:
+      label: Version and device
+      description: Flow version, device, OS version, and keyboard or desktop session.
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Speech model and options
+      description: Selected model; cleanup, vocabulary, and automatic typing settings if relevant.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the target app when reporting typing problems.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual result
+      description: Include exact errors or a harmless sample. For slow dictation, include recording length and timing from Settings.
+    validations:
+      required: true

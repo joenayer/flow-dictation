@@ -1,0 +1,29 @@
+name: Speech or dictionary problem
+description: Report a misheard phrase or a correction that did not apply.
+body:
+  - type: markdown
+    attributes:
+      value: Report the behavior without a patch; outside code contributions are not accepted. Android vocabulary replaces Heard as wording after recognition. Adding a word alone does not train the recognizer. Check Show original and use a harmless invented example.
+  - type: input
+    id: environment
+    attributes:
+      label: Flow version, device, OS, and speech model
+    validations:
+      required: true
+  - type: textarea
+    id: text
+    attributes:
+      label: Spoken phrase, original transcript, and finished text
+      description: Separate the three to distinguish recognition from later corrections. Avoid private dictation.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Relevant vocabulary rule and cleanup settings
+      description: Desired word and exact Heard as aliases; whether edit suggestions and cleanup were enabled.
+  - type: textarea
+    id: repeat
+    attributes:
+      label: Does it repeat?
+      description: Is original wording consistent across attempts? Describe the noise conditions.

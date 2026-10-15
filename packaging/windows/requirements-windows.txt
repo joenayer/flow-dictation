@@ -1,0 +1,9 @@
+# Windows runtime requirements for flow (English-only, offline dictation).
+# Mirrors Windows dependencies in the root pyproject.toml.
+# X11 support is Linux-only; Windows uses pynput for global shortcuts.
+numpy
+sounddevice
+soundfile
+sherpa-onnx
+PySide6
+pynput

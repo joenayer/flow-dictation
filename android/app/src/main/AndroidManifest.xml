@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Microphone capture for dictation. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Foreground dictation service: microphone type only while recording,
+         specialUse while idle with the bubble (API 34+). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Floating bubble overlay over other apps. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Persistent service notification on API 33+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Internet is used only for explicit supported speech-model downloads. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- User-approved in-app APK updates through Android's package installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_flow"
+        android:roundIcon="@drawable/ic_flow"
+        android:theme="@style/Theme.Flow"
+        android:usesCleartextTraffic="false"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/backup_rules"
+        android:fullBackupContent="@xml/backup_rules_legacy">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity android:name=".BubbleControlsActivity" android:exported="false" />
+        <activity android:name=".HistoryActivity" android:exported="false" />
+        <activity android:name=".VocabularyActivity" android:exported="false" />
+        <activity android:name=".WisprDictionaryImportActivity" android:exported="false" />
+        <activity
+            android:name=".UpdateInstallActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".UpdateInstallConfirmationActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".UpdateInstallResultReceiver"
+            android:exported="false" />
+
+        <service
+            android:name=".TypingAccessibilityService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/typing_accessibility_service" />
+        </service>
+
+        <service
+            android:name=".DictationService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Idle host for the overlay dictation bubble; the microphone type is used only while recording." />
+        </service>
+    </application>
+</manifest>

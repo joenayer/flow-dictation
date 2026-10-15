@@ -1,0 +1,13 @@
+<resources>
+    <color name="flow_primary">#A4D7C6</color>
+    <color name="flow_on_primary">#00382B</color>
+    <color name="flow_container">#203E34</color>
+    <color name="flow_on_container">#D2EEE2</color>
+    <color name="flow_surface">#111916</color>
+    <color name="flow_panel">#1A2420</color>
+    <color name="flow_text">#E6EEE9</color>
+    <color name="flow_muted">#B2C2BA</color>
+    <color name="flow_outline">#41564B</color>
+    <color name="flow_error">#FFB4AB</color>
+    <color name="flow_warning">#E6BE70</color>
+</resources>

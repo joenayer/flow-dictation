@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="typing_accessibility_description">When you enable automatic typing, Flow detects supported focused text fields and inserts your dictation there after you tap the microphone bubble. Flow checks only the focused field, skips password and protected fields, and does not upload field text or dictation. You can turn this off at any time in Flow or Android accessibility settings.</string>
+</resources>

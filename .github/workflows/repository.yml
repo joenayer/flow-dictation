@@ -1,0 +1,38 @@
+name: Repository
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs-and-tooling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check public source hygiene
+        run: python scripts/check_public_source.py
+      - name: Check local documentation links
+        run: python scripts/check_docs.py
+      - name: Run isolated setup and dictionary-helper regressions
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py'
+      - name: Check shell syntax and package metadata
+        run: |
+          bash -n scripts/fetch_models.sh
+          sh -n packaging/install.sh
+          sh -n scripts/e2e_offline.sh
+          python -c "import pathlib, tomllib; tomllib.loads(pathlib.Path('pyproject.toml').read_text())"

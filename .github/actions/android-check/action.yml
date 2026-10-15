@@ -1,0 +1,265 @@
+name: Android build and native checks
+description: Build and package Flow, then run every native suite on one emulator with fresh app installs.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    - uses: android-actions/setup-android@v3
+      with:
+        packages: platform-tools
+        log-accepted-android-sdk-licenses: false
+
+    - name: Install Android SDK packages
+      shell: bash
+      run: sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+
+    - uses: gradle/actions/setup-gradle@v4
+
+    - name: Configure private preview signing
+      shell: bash
+      env:
+        IS_PREVIEW_SIGNING_REQUIRED: ${{ env.FLOW_PREVIEW_SIGNING_REQUIRED }}
+      run: |
+        set -euo pipefail
+        if [ -z "${FLOW_PREVIEW_KEYSTORE_BASE64:-}" ]; then
+          if [ "${IS_PREVIEW_SIGNING_REQUIRED:-false}" = true ] || \
+             [ -n "${FLOW_PREVIEW_STORE_PASSWORD:-}${FLOW_PREVIEW_KEY_ALIAS:-}${FLOW_PREVIEW_KEY_PASSWORD:-}" ]; then
+            echo "::error::Preview delivery requires the complete persistent signing configuration."
+            exit 1
+          fi
+          echo "::warning::Temporary debug signing: this APK may not update an installed Preview."
+          exit 0
+        fi
+        test -n "${FLOW_PREVIEW_STORE_PASSWORD:-}"
+        test -n "${FLOW_PREVIEW_KEY_ALIAS:-}"
+        test -n "${FLOW_PREVIEW_KEY_PASSWORD:-}"
+        printf '%s' "${FLOW_PREVIEW_CERT_SHA256:-}" | grep -Eq '^[a-fA-F0-9]{64}$'
+        umask 077
+        signing_dir="$(mktemp -d "$RUNNER_TEMP/flow-preview-signing.XXXXXX")"
+        printf '%s' "$FLOW_PREVIEW_KEYSTORE_BASE64" | base64 --decode > "$signing_dir/preview.jks"
+        echo "FLOW_PREVIEW_KEYSTORE_PATH=$signing_dir/preview.jks" >> "$GITHUB_ENV"
+
+    - name: Fetch sherpa-onnx runtime and small VAD
+      shell: bash
+      working-directory: android
+      run: ./scripts/fetch-deps.sh runtime-only
+
+    - name: Check dependency, packaging, signing, and emulator-preparation regressions
+      shell: bash
+      working-directory: android
+      run: |
+        set -euo pipefail
+        ./scripts/test-fetch-deps.sh
+        ./scripts/test-package-apk.sh
+        python3 ./scripts/test-preview-signing.py
+        python3 ./scripts/test-prepare-emulator.py
+        python3 ./scripts/test-run-native-ci-suites.py
+        python3 -m unittest discover -s ../scripts/tests -p 'test_export_wispr_dictionary.py'
+
+    - name: Test, lint, and build APKs
+      shell: bash
+      working-directory: android
+      run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+
+    - name: Summarize unit-test and lint results
+      if: always()
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import glob
+        import os
+        import xml.etree.ElementTree as ET
+
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if not summary:
+            raise SystemExit(0)
+        lines = ["### Android unit tests and lint\n"]
+        tests = failures = errors = skipped = 0
+        test_reports = glob.glob("android/app/build/test-results/testDebugUnitTest/TEST-*.xml")
+        parse_problems = 0
+        for name in test_reports:
+            try:
+                root = ET.parse(name).getroot()
+                suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+                for suite in suites:
+                    tests += int(suite.get("tests", "0"))
+                    failures += int(suite.get("failures", "0"))
+                    errors += int(suite.get("errors", "0"))
+                    skipped += int(suite.get("skipped", "0"))
+            except (ET.ParseError, OSError, ValueError):
+                parse_problems += 1
+        if test_reports:
+            state = "PASS" if failures == 0 and errors == 0 else "FAIL"
+            if parse_problems:
+                state = "INCOMPLETE"
+            lines.append(f"- Unit tests: **{state}** - {tests} tests, {failures} failures, {errors} errors, {skipped} skipped.\n")
+        else:
+            lines.append("- Unit tests: report not generated; see the Gradle step output.\n")
+
+        lint_path = "android/app/build/reports/lint-results-debug.xml"
+        if os.path.isfile(lint_path):
+            try:
+                root = ET.parse(lint_path).getroot()
+                issues = root.findall("issue")
+            except (ET.ParseError, OSError):
+                issues = None
+        else:
+            issues = None
+        if issues is not None:
+            lint_errors = sum(issue.get("severity") in {"Error", "Fatal"} for issue in issues)
+            lint_warnings = sum(issue.get("severity") == "Warning" for issue in issues)
+            state = "PASS" if lint_errors == 0 else "FAIL"
+            lines.append(f"- Lint: **{state}** - {lint_errors} errors, {lint_warnings} warnings.\n")
+            for issue in issues[:12]:
+                detail = f"{issue.get('severity', 'Issue')} [{issue.get('id', 'unknown')}]: {issue.get('message', '')}"
+                location = issue.get("file", "")
+                if location and issue.get("line"):
+                    detail += f" ({location}:{issue.get('line')})"
+                lines.append(f"  - {detail}\n")
+            if len(issues) > 12:
+                lines.append(f"  - {len(issues) - 12} more lint findings are in the Gradle output/report.\n")
+        else:
+            lines.append("- Lint: report not generated; see the Gradle step output.\n")
+        with open(summary, "a", encoding="utf-8") as out:
+            out.writelines(lines)
+        PY
+
+    - name: Package versioned APK and checksum
+      id: package-apk
+      shell: bash
+      working-directory: android
+      run: |
+        set -euo pipefail
+        ./scripts/package-apk.sh app/build/outputs/apk/debug/app-debug.apk dist universal
+        ./gradlew --no-daemon assembleDebug -PflowAbi=arm64-v8a
+        ./scripts/package-apk.sh app/build/outputs/apk/debug/app-debug.apk dist arm64-v8a
+        ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest -PflowAbi=universal
+        if [ -n "${FLOW_PREVIEW_KEYSTORE_PATH:-}" ]; then
+          actual="$("$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          expected="$(printf '%s' "$FLOW_PREVIEW_CERT_SHA256" | tr '[:upper:]' '[:lower:]')"
+          test "$actual" = "$expected" || { echo "::error::Preview signing certificate differs from its pinned fingerprint."; exit 1; }
+          for report in dist/Flow-Dictation-*.build.txt; do
+            echo "Persistent preview signing; certificate verified." >> "$report"
+          done
+        else
+          for report in dist/Flow-Dictation-*.build.txt; do
+            echo "Temporary debug signing; upgrade compatibility is not assured." >> "$report"
+          done
+        fi
+
+    - name: Remove private signing file
+      if: always()
+      shell: bash
+      run: rm -rf "$RUNNER_TEMP"/flow-preview-signing.*
+
+    - name: Verify Parakeet stays outside the APK
+      id: bundle-check
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 - <<'PY'
+        import zipfile
+        with zipfile.ZipFile('android/app/build/outputs/apk/debug/app-debug.apk') as apk:
+            names = apk.namelist()
+            assert not any('parakeet' in n.lower() for n in names)
+            assert not any(n.startswith('assets/models/') for n in names)
+            assert 'assets/silero_vad.onnx' in names
+        PY
+
+    - name: Configure emulator host resources and evidence folders
+      id: emulator-host
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p native-screens/startup auto-input-tests/startup parakeet-evidence/startup flow15-evidence/startup
+        host_cpus="$(nproc)"
+        cores=2
+        if [ "$host_cpus" -ge 4 ]; then cores=4; fi
+        printf 'cores=%s\n' "$cores" >> "$GITHUB_OUTPUT"
+        { printf 'Host CPUs: %s; emulator cores: %s\n' "$host_cpus" "$cores"; free -m; df -h "$HOME"; } | tee native-screens/startup/host.txt
+        cp native-screens/startup/host.txt auto-input-tests/startup/host.txt
+        cp native-screens/startup/host.txt parakeet-evidence/startup/host.txt
+        cp native-screens/startup/host.txt flow15-evidence/startup/host.txt
+        sudo chmod a+rw /dev/kvm
+
+    - name: Select and verify packaged universal APK
+      id: native-apk
+      if: "!cancelled() && steps.package-apk.outcome == 'success' && steps.bundle-check.outcome == 'success'"
+      shell: bash
+      run: |
+        set -euo pipefail
+        mapfile -t apks < <(find android/dist -maxdepth 1 -type f -name 'Flow-Dictation-*-universal.apk' -print)
+        test "${#apks[@]}" -eq 1 || { echo "Expected one universal APK; found ${#apks[@]}"; exit 1; }
+        (cd android/dist && sha256sum -c Flow-Dictation-*.apk.sha256)
+        printf 'path=%s\n' "${apks[0]}" >> "$GITHUB_OUTPUT"
+
+    - name: Fetch separate Parakeet test model
+      id: fetch-model
+      if: "!cancelled() && steps.native-apk.outcome == 'success'"
+      continue-on-error: true
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p parakeet-fixture
+        archive=sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
+        curl -fSL --retry 3 -o "$archive" "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/$archive"
+        grep "  $archive$" android/scripts/checksums.sha256 | sha256sum -c -
+        tar -xjf "$archive" -C parakeet-fixture --strip-components=1
+        rm "$archive"
+
+    # Reuse one booted OS to avoid repeating the fragile launcher startup.
+    # The orchestrator resets both Flow packages before each independent suite.
+    - uses: reactivecircus/android-emulator-runner@v2
+      id: native-suites
+      if: "!cancelled() && steps.native-apk.outcome == 'success'"
+      with:
+        avd-name: flow-native-ci
+        api-level: 34
+        target: default
+        arch: x86_64
+        profile: pixel_5
+        cores: ${{ steps.emulator-host.outputs.cores }}
+        ram-size: 4096M
+        emulator-boot-timeout: 300
+        script: python3 android/scripts/run-native-ci-suites.py --apk "${{ steps.native-apk.outputs.path }}" --test-apk android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk --model-dir parakeet-fixture --audio parakeet-fixture/test_wavs/0.wav --model-ready "${{ steps.fetch-model.outcome == 'success' }}" --summary-json native-ci-summary.json
+
+    - name: Record disk usage and release native CI AVD
+      if: always() && steps.emulator-host.outcome == 'success'
+      shell: bash
+      run: |
+        set -euo pipefail
+        avd_root="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+        test "$avd_root" = "$HOME/.android/avd"
+        {
+          echo 'Disk before native CI AVD cleanup:'
+          df -h "$HOME"
+          du -sh "$avd_root/flow-native-ci.avd" "$avd_root/flow-native-ci.ini" 2>/dev/null || true
+        } | tee -a native-screens/startup/storage.txt
+        mapfile -t active_emulators < <(adb devices | awk 'NR > 1 && $2 == "device" && $1 ~ /^emulator-/ {print $1}')
+        for serial in "${active_emulators[@]}"; do
+          qemu="$(adb -s "$serial" shell getprop ro.kernel.qemu 2>/dev/null | tr -d '\r')" || qemu=''
+          avd="$(adb -s "$serial" shell getprop ro.boot.qemu.avd_name 2>/dev/null | tr -d '\r')" || avd=''
+          if [ "$qemu" = 1 ] && [ "$avd" = flow-native-ci ]; then
+            adb -s "$serial" emu kill >/dev/null 2>&1 || true
+          fi
+        done
+        rm -rf -- "$avd_root/flow-native-ci.avd" "$avd_root/flow-native-ci.ini"
+        {
+          echo 'Disk after native CI AVD cleanup:'
+          df -h "$HOME"
+        } | tee -a native-screens/startup/storage.txt
+    # Publish only successful development APKs and checksums. Raw device logs,
+    # screenshots, history, and local build reports are not uploaded.
+    - uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: flow-development-apks-${{ github.sha }}
+        path: |
+          android/dist/*.apk
+          android/dist/*.apk.sha256
+        if-no-files-found: error
+        retention-days: 7

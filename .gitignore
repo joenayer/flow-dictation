@@ -1,0 +1,32 @@
+.venv/
+__pycache__/
+*.pyc
+models/*.tar.bz2
+models/*/
+models/*.onnx
+models/hotwords.txt
+!models/.gitkeep
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Local tools, downloads, verification evidence, and credentials.
+.scratch*/
+.impeccable/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+
+# Local benchmark audio is downloaded during setup.
+bench/fixtures/*.flac
+bench/fixtures/*.wav

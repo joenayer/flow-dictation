@@ -1,0 +1,8 @@
+# Optional launcher for installations that expose flowd on PATH.
+[Desktop Entry]
+Type=Application
+Name=flow-linux
+Comment=Local Wispr Flow-style English dictation
+Exec=flowd
+TryExec=flowd
+Terminal=false

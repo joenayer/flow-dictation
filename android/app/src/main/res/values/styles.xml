@@ -1,0 +1,55 @@
+<resources>
+    <style name="Theme.Flow.Base" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/flow_primary</item>
+        <item name="colorOnPrimary">@color/flow_on_primary</item>
+        <item name="colorPrimaryContainer">@color/flow_container</item>
+        <item name="colorOnPrimaryContainer">@color/flow_on_container</item>
+        <item name="colorSecondary">@color/flow_primary</item>
+        <item name="colorOnSecondary">@color/flow_on_primary</item>
+        <item name="colorSecondaryContainer">@color/flow_container</item>
+        <item name="colorOnSecondaryContainer">@color/flow_on_container</item>
+        <item name="colorSurface">@color/flow_panel</item>
+        <item name="colorSurfaceContainerLowest">@color/flow_surface</item>
+        <item name="colorSurfaceContainerLow">@color/flow_surface</item>
+        <item name="colorSurfaceContainer">@color/flow_panel</item>
+        <item name="colorSurfaceContainerHigh">@color/flow_panel</item>
+        <item name="colorSurfaceContainerHighest">@color/flow_panel</item>
+        <item name="colorOnSurface">@color/flow_text</item>
+        <item name="colorOnSurfaceVariant">@color/flow_muted</item>
+        <item name="colorSurfaceVariant">@color/flow_surface</item>
+        <item name="colorOutline">@color/flow_outline</item>
+        <item name="colorOutlineVariant">@color/flow_outline</item>
+        <item name="colorError">@color/flow_error</item>
+        <item name="android:colorBackground">@color/flow_surface</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:statusBarColor">@color/flow_surface</item>
+        <item name="android:navigationBarColor">@color/flow_surface</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColorPrimary">@color/flow_text</item>
+        <item name="android:textColorSecondary">@color/flow_muted</item>
+    </style>
+    <style name="Theme.Flow" parent="Theme.Flow.Base" />
+    <style name="Flow.Panel" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/flow_panel</item>
+        <item name="strokeColor">@color/flow_outline</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+    <style name="Flow.Title" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textColor">@color/flow_text</item>
+    </style>
+    <style name="Flow.AppTitle" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">@color/flow_text</item>
+    </style>
+    <style name="Flow.SectionTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">@color/flow_text</item>
+    </style>
+    <style name="Flow.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/flow_muted</item>
+    </style>
+    <style name="Flow.Support" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/flow_muted</item>
+    </style>
+    <bool name="light_system_bars">true</bool>
+</resources>

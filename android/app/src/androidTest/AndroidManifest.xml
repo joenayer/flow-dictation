@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- This lives in the separate test APK, so it is an external app to Flow. -->
+        <activity android:name="com.flowdictation.android.AutoInputFixtureActivity"
+            android:exported="true" android:windowSoftInputMode="adjustResize" />
+    </application>
+</manifest>

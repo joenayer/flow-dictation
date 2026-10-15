@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement with a concrete use case.
+body:
+  - type: markdown
+    attributes:
+      value: Suggestions do not guarantee implementation. Outside pull requests and code contributions are not accepted; please describe your use case without a patch.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Name the platform and explain where the current workflow falls short.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior
+      description: Describe the outcome and any workaround you use today.
+    validations:
+      required: true

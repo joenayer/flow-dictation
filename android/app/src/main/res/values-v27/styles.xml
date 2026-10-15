@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.Flow" parent="Theme.Flow.Base">
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+    </style>
+</resources>

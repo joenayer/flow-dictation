@@ -1,0 +1,41 @@
+name: Android
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+      - ".github/actions/android-check/**"
+      - "scripts/export_wispr_dictionary.py"
+      - "scripts/tests/**"
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+      - ".github/actions/android-check/**"
+      - "scripts/export_wispr_dictionary.py"
+      - "scripts/tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      # Public CI creates development builds with a temporary debug key.
+      # Official signed downloads are distributed separately.
+      FLOW_PREVIEW_SIGNING_REQUIRED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run Android build, tests, and packaging
+        uses: ./.github/actions/android-check

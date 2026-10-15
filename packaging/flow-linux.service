@@ -1,0 +1,12 @@
+[Unit]
+Description=flow-linux local dictation service
+
+[Service]
+Environment=DISPLAY=:0
+ExecStart=@FLOW_EXECSTART@ -m flow.flowd
+Restart=on-failure
+TimeoutStopSec=10
+WorkingDirectory=@FLOW_WORKDIR@
+
+[Install]
+WantedBy=default.target

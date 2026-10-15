@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Block action buttons are the intended design (not button bars). -->
+    <issue id="ButtonStyle" severity="ignore" />
+    <!-- Phone ABIs only by decision: x86_64 slices add ~70 MB for no
+         on-device user (see abiFilters in app/build.gradle.kts). -->
+    <issue id="ChromeOsAbiSupport" severity="ignore" />
+</lint>

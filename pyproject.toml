@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["flow*", "bench*"]
+
+[project]
+name = "flow-linux"
+version = "0.1.0"
+description = "On-device English voice dictation for Linux and Windows"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "sounddevice",
+    "soundfile",
+    "sherpa-onnx",
+    "PySide6",
+    "python-xlib; sys_platform == 'linux'",
+    "pynput; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+flowd = "flow.flowd:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+# Bug-catching gate: syntax errors, pyflakes, flake8-bugbear. Broader
+# style rules (BLE, SIM, DTZ, …) are intentionally off: defensive
+# try/except is this codebase's convention for UI/service code.
+select = ["E9", "F", "B"]

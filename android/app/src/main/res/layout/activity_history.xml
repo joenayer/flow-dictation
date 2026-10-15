@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="20dp">
+    <com.google.android.material.button.MaterialButton android:id="@+id/back" style="@style/Widget.Material3.Button.TextButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="Back"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="History" android:textAppearance="@style/Flow.Title"/>
+    <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Search your dictations" android:layout_marginTop="12dp">
+        <com.google.android.material.textfield.TextInputEditText android:id="@+id/search_history" android:layout_width="match_parent" android:layout_height="wrap_content" android:importantForAutofill="no" android:inputType="text" android:singleLine="true"/>
+    </com.google.android.material.textfield.TextInputLayout>
+    <com.google.android.material.button.MaterialButton android:id="@+id/export_history" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="Export all history" android:layout_marginTop="12dp"/>
+    <TextView android:id="@+id/empty_history" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No saved dictations yet. Record something to get started." android:textAppearance="@style/Flow.Body" android:layout_marginTop="24dp"/>
+    <ListView android:id="@+id/list_history" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="16dp" android:divider="@android:color/transparent" android:dividerHeight="8dp"/>
+</LinearLayout>
