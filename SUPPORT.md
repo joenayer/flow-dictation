@@ -32,4 +32,4 @@ the field before manually pasting an unconfirmed insertion.
 Open a [GitHub issue](https://github.com/joenayer/flow-dictation/issues) using the
 appropriate template. Bug reports are welcome; outside code contributions and
 pull requests are not accepted. Support is provided as time permits, without
-a guaranteed response. For sensitive issues, follow [SECURITY.md](SECURITY.md).
+a guaranteed response. For security issues, do not use public issues — report privately, as described in [SECURITY.md](SECURITY.md).
